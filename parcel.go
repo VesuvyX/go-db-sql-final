@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 )
 
 type ParcelStore struct {
@@ -24,26 +25,29 @@ func (s ParcelStore) Add(p Parcel) (int, error) {
 		return 0, err
 	}
 
+	// верните идентификатор последней добавленной записи
 	id, err := res.LastInsertId()
 	if err != nil {
 		return 0, err
 	}
-	// верните идентификатор последней добавленной записи
 	return int(id), nil
 }
 
 func (s ParcelStore) Get(number int) (Parcel, error) {
 	// реализуйте чтение строки по заданному number
 	// здесь из таблицы должна вернуться только одна строка
-
+	if number == 0 {
+		return Parcel{}, errors.New("неверный номер посылки")
+	}
 	// заполните объект Parcel данными из таблицы
 	p := Parcel{}
 
 	//!!!если написать еще в SELECT number и сделать проверку на &p.Number, то будет ошибка (разные айди, например, Ожидалос: 0, а Актуальный: 26)!!!
-	row := s.db.QueryRow("SELECT client, status, address, created_at FROM Parcel WHERE number = :number",
+	row := s.db.QueryRow("SELECT * FROM Parcel WHERE number =:number",
 		sql.Named("number", number),
 	)
-	err := row.Scan(&p.Client, &p.Status, &p.Address, &p.CreatedAt)
+	err := row.Scan(&p.Number, &p.Client, &p.Status, &p.Address, &p.CreatedAt)
+
 	if err != nil {
 		return p, err
 	}
